@@ -2,6 +2,59 @@
 
 namespace lt {
 
+math::Point3 point3(const aiVector3D &vec) {
+    return {vec.x, vec.y, vec.z};
+}
+
+const aiScene* readScene(Assimp::Importer &imp
+        , const roarchive::RoArchive &archive
+        , const fs::path &path
+        , unsigned int flags)
+{
+    // if (archive.directio()) {
+    //     return imp.ReadFile(archive.path(path).string(), flags);
+    // }
+
+    const auto buf(archive.istream(path)->read());
+
+    const auto *scene
+            (imp.ReadFileFromMemory(buf.data(), buf.size(), flags));
+    // , path.extension().c_str()));
+    if (!scene) {
+        LOGTHROW(err3, std::runtime_error)
+                << "Error loading scene " << path
+                << "( " << imp.GetErrorString() << " ).";
+    }
+
+    return scene;
+}
+
+cv::Mat readTexture(const roarchive::RoArchive &archive, const fs::path &path
+        , bool useEmpty)
+{
+    cv::Mat texture;
+    // if (archive.directio()) {
+    //     texture = cv::imread(archive.path(path).string(), CV_LOAD_IMAGE_COLOR);
+    // } else {
+    const auto buf(archive.istream(path)->read());
+    texture = cv::imdecode(buf, CV_LOAD_IMAGE_COLOR);
+    // }
+
+    if (texture.data) { return texture; }
+
+    if (!useEmpty) {
+        LOGTHROW(err3, std::runtime_error)
+                << "Error loading texture from " << path << ".";
+    }
+
+    LOG(warn3)
+        << "Error loading image " << path << "; using empty texture.";
+    texture.create(64, 64, CV_8UC3);
+    texture = cv::Scalar(255, 255, 255);
+
+    return texture;
+}
+
 xml::XMLError readXml(const roarchive::RoArchive &archive
         , const fs::path &path, xml::XMLDocument &doc)
 {

@@ -3,6 +3,12 @@
 
 #include <boost/filesystem.hpp>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
+#include <opencv2/highgui/highgui.hpp>
+
 #include "math/math.hpp"
 #include "math/transform.hpp"
 
@@ -16,6 +22,16 @@ namespace xml = tinyxml2;
 namespace lt {
 
 const std::string mainXmlFileName("LODTreeExport.xml");
+
+const aiScene* readScene(Assimp::Importer &imp
+            , const roarchive::RoArchive &archive
+            , const fs::path &path
+            , unsigned int flags);
+
+cv::Mat readTexture(const roarchive::RoArchive &archive, const fs::path &path
+        , bool useEmpty = false);
+
+math::Point3 point3(const aiVector3D &vec);
 
 struct LodTreeNode
 {
