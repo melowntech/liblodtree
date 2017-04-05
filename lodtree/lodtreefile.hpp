@@ -9,12 +9,12 @@
 
 #include <opencv2/highgui/highgui.hpp>
 
+#include <tinyxml2.h>
+
 #include "math/math.hpp"
 #include "math/transform.hpp"
 
 #include "roarchive/roarchive.hpp"
-
-#include "tinyxml2/tinyxml2.h"
 
 namespace fs = boost::filesystem;
 namespace xml = tinyxml2;
