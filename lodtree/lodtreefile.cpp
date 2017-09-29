@@ -1,3 +1,7 @@
+#include <ogr_spatialref.h>
+
+#include "geo/enu.hpp"
+
 #include "lodtreefile.hpp"
 
 namespace lt {
@@ -157,17 +161,35 @@ LodTreeNode::LodTreeNode(tinyxml2::XMLElement *node, const fs::path &dir,
 }
 
 LodTreeExport::LodTreeExport(const roarchive::RoArchive &archive
-        , const math::Point3 &offset)
+                             , const math::Point3 &offset)
 {
     xml::XMLDocument doc;
     auto *root = loadLodTreeXml(archive, mainXmlFileName, doc);
 
-    srs = getElement(root, "SRS")->GetText();
+    // get raw SRS string
+    const std::string srsString(getElement(root, "SRS")->GetText());
 
+    // get origin point
     auto *local = getElement(root, "Local");
     origin(0) = getDoubleAttr(local, "x");
     origin(1) = getDoubleAttr(local, "y");
     origin(2) = getDoubleAttr(local, "z");
+
+    if (!srsString.empty()) {
+        // parse SRS
+        srs = geo::SrsDefinition::fromString(srsString);
+
+        if (srs.reference().IsGeographic()) {
+            // non-metric system -> ENU
+            srs = geo::SrsDefinition::fromEnu(geo::Enu(origin, srs));
+            // reset origin
+            origin = {};
+        }
+    }
+
+    LOG(info4) << "LODTree: SRS=\"" << srs << "\", origin: " << origin;
+
+    // shift by offset
     origin += offset;
 
     // load all blocks ("Tiles")

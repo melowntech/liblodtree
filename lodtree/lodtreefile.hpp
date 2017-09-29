@@ -16,6 +16,8 @@
 
 #include "roarchive/roarchive.hpp"
 
+#include "geo/srsdef.hpp"
+
 namespace fs = boost::filesystem;
 namespace xml = tinyxml2;
 
@@ -46,7 +48,7 @@ struct LodTreeNode
 
 struct LodTreeExport
 {
-    std::string srs;
+    geo::SrsDefinition srs;
     math::Point3 origin;
     std::vector<LodTreeNode> blocks;
 
