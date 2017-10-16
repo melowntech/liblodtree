@@ -24,6 +24,7 @@ namespace xml = tinyxml2;
 namespace lt {
 
 const std::string mainXmlFileName("LODTreeExport.xml");
+const std::string alternativeXmlFileName("metadata.xml");
 
 const aiScene* readScene(Assimp::Importer &imp
             , const roarchive::RoArchive &archive
@@ -44,6 +45,10 @@ struct LodTreeNode
 
     LodTreeNode(xml::XMLElement *elem, const fs::path &dir,
                 const math::Point3 &rootOrigin);
+
+    LodTreeNode(const fs::path &modelPath, const math::Point3 &origin)
+        : radius(), minRange(), origin(origin), modelPath(modelPath)
+    {}
 };
 
 struct LodTreeExport
