@@ -7,6 +7,8 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 
+#include <opencv2/highgui/highgui.hpp>
+
 #include <ogr_spatialref.h>
 
 #include "utility/streams.hpp"
@@ -15,9 +17,11 @@
 
 #include "lodtreefile.hpp"
 
+namespace fs = boost::filesystem;
+namespace xml = tinyxml2;
 namespace ba = boost::algorithm;
 
-namespace lt {
+namespace lodtree {
 
 math::Point3 point3(const aiVector3D &vec) {
     return {vec.x, vec.y, vec.z};
@@ -497,4 +501,4 @@ LodTreeExport::LodTreeExport(const roarchive::RoArchive &archive
     }
 }
 
-} // nameslace lt
+} // namespace lodtree

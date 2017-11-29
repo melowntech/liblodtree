@@ -1,13 +1,11 @@
-#ifndef vts_tools_lodtreefile_hpp_included
-#define vts_tools_lodtreefile_hpp_included
+#ifndef lodtree_lodtreefile_hpp_included
+#define lodtree_lodtreefile_hpp_included
 
 #include <boost/filesystem.hpp>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-
-#include <opencv2/highgui/highgui.hpp>
 
 #include <tinyxml2.h>
 
@@ -18,21 +16,19 @@
 
 #include "geo/srsdef.hpp"
 
-namespace fs = boost::filesystem;
-namespace xml = tinyxml2;
-
-namespace lt {
+namespace lodtree {
 
 const std::string mainXmlFileName("LODTreeExport.xml");
 const std::string alternativeXmlFileName("metadata.xml");
 
 const aiScene* readScene(Assimp::Importer &imp
             , const roarchive::RoArchive &archive
-            , const fs::path &path
+            , const boost::filesystem::path &path
             , unsigned int flags);
 
-cv::Mat readTexture(const roarchive::RoArchive &archive, const fs::path &path
-        , bool useEmpty = false);
+cv::Mat readTexture(const roarchive::RoArchive &archive
+                    , const boost::filesystem::path &path
+                    , bool useEmpty = false);
 
 math::Point3 point3(const aiVector3D &vec);
 
@@ -40,13 +36,14 @@ struct LodTreeNode
 {
     double radius, minRange;
     math::Point3 origin;
-    fs::path modelPath;
+    boost::filesystem::path modelPath;
     std::vector<LodTreeNode> children;
 
-    LodTreeNode(xml::XMLElement *elem, const fs::path &dir,
+    LodTreeNode(tinyxml2::XMLElement *elem, const boost::filesystem::path &dir,
                 const math::Point3 &rootOrigin);
 
-    LodTreeNode(const fs::path &modelPath, const math::Point3 &origin)
+    LodTreeNode(const boost::filesystem::path &modelPath
+                , const math::Point3 &origin)
         : radius(), minRange(), origin(origin), modelPath(modelPath)
     {}
 };
@@ -61,6 +58,6 @@ struct LodTreeExport
             , const math::Point3 &offset);
 };
 
-}  // namespace lt
+}  // namespace lodtree
 
-#endif // vts_tools_lodtreefile_hpp_included
+#endif // lodtree_lodtreefile_hpp_included
