@@ -32,31 +32,58 @@ cv::Mat readTexture(const roarchive::RoArchive &archive
 
 math::Point3 point3(const aiVector3D &vec);
 
-struct LodTreeNode
+struct Node
 {
+    typedef std::vector<Node> list;
+
     double radius, minRange;
     math::Point3 origin;
     boost::filesystem::path modelPath;
-    std::vector<LodTreeNode> children;
+    list children;
+    int level;
 
-    LodTreeNode(tinyxml2::XMLElement *elem, const boost::filesystem::path &dir,
-                const math::Point3 &rootOrigin);
+    Node(tinyxml2::XMLElement *elem, const boost::filesystem::path &dir
+         , const math::Point3 &rootOrigin, int level);
 
-    LodTreeNode(const boost::filesystem::path &modelPath
-                , const math::Point3 &origin)
+    Node(const boost::filesystem::path &modelPath
+         , const math::Point3 &origin
+         , int level)
         : radius(), minRange(), origin(origin), modelPath(modelPath)
+        , level(level)
     {}
 };
 
-struct LodTreeExport
+class LodTreeExport
 {
+public:
     geo::SrsDefinition srs;
     math::Point3 origin;
-    std::vector<LodTreeNode> blocks;
+    Node::list blocks;
 
-    LodTreeExport(const roarchive::RoArchive &archive
-            , const math::Point3 &offset);
+    LodTreeExport(roarchive::RoArchive &archive
+                  , const math::Point3 &offset);
+
+    LodTreeExport(const boost::filesystem::path &root
+                  , const math::Point3 &offset
+                  , const std::string &mime = "");
+
+    /** Returns lodtree as flat node list.
+     */
+    Node::list nodes() const;
+
+    const roarchive::RoArchive &archive() const { return archive_; }
+
+    /** Measures texture image size.
+     */
+    math::Size2 textureSize(const boost::filesystem::path &txPath) const;
+
+private:
+    roarchive::RoArchive archive_;
 };
+
+/** For compatibility.
+ */
+typedef Node LodTreeNode;
 
 }  // namespace lodtree
 

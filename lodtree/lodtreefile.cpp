@@ -15,6 +15,8 @@
 
 #include "geo/enu.hpp"
 
+#include "imgproc/readimage.hpp"
+
 #include "lodtreefile.hpp"
 
 namespace fs = boost::filesystem;
@@ -150,8 +152,9 @@ xml::XMLElement* loadLodTreeXml(const roarchive::RoArchive &archive
     return root;
 }
 
-LodTreeNode::LodTreeNode(tinyxml2::XMLElement *node, const fs::path &dir,
-                         const math::Point3 &rootOrigin)
+Node::Node(tinyxml2::XMLElement *node, const fs::path &dir
+           , const math::Point3 &rootOrigin, int level)
+    : level(level)
 {
     int ok = xml::XML_SUCCESS;
     if (getElement(node, "Radius")->QueryDoubleText(&radius) != ok ||
@@ -176,7 +179,7 @@ LodTreeNode::LodTreeNode(tinyxml2::XMLElement *node, const fs::path &dir,
     {
         if (strNode == elem->Name())
         {
-            children.emplace_back(elem, dir, rootOrigin);
+            children.emplace_back(elem, dir, rootOrigin, level + 1);
         }
     }
 }
@@ -239,7 +242,8 @@ bool openArchive(const roarchive::RoArchive &archive
             auto *tileRoot = loadLodTreeXml(archive, path, tileDoc);
             auto *rootNode = getElement(tileRoot, "Tile");
 
-            lte.blocks.emplace_back(rootNode, path.parent_path(), lte.origin);
+            lte.blocks.emplace_back
+                (rootNode, path.parent_path(), lte.origin, 0);
         }
     }
 
@@ -365,29 +369,29 @@ public:
         nodes_.emplace_back(id, path);
     }
 
-    void getTree(std::vector<LodTreeNode> &roots
+    void getTree(std::vector<Node> &roots
                  , const math::Point3 &origin);
 
 private:
-    struct Node {
+    struct TBNode {
         std::string id;
         fs::path path;
 
-        Node(const std::string &id, const fs::path &path)
+        TBNode(const std::string &id, const fs::path &path)
             : id(id), path(path)
         {}
 
-        bool operator<(const Node &o) const {
+        bool operator<(const TBNode &o) const {
             return id < o.id;
         }
 
-        typedef std::vector<Node> list;
+        typedef std::vector<TBNode> list;
     };
 
-    Node::list nodes_;
+    TBNode::list nodes_;
 };
 
-void TreeBuilder::getTree(std::vector<LodTreeNode> &roots
+void TreeBuilder::getTree(std::vector<Node> &roots
                           , const math::Point3 &origin)
 {
     if (nodes_.empty()) { return; }
@@ -397,13 +401,13 @@ void TreeBuilder::getTree(std::vector<LodTreeNode> &roots
     auto inodes(nodes_.begin());
     auto enodes(nodes_.end());
 
-    roots.emplace_back(inodes->path, origin);
+    roots.emplace_back(inodes->path, origin, 0);
 
     struct NodeInfo {
         std::string id;
-        LodTreeNode *node;
+        Node *node;
 
-        NodeInfo(const std::string &id, LodTreeNode *node)
+        NodeInfo(const std::string &id, Node *node)
             : id(id), node(node)
         {}
 
@@ -429,7 +433,7 @@ void TreeBuilder::getTree(std::vector<LodTreeNode> &roots
             continue;
         }
 
-        top.node->children.emplace_back(inodes->path, origin);
+        top.node->children.emplace_back(inodes->path, origin, newId.size());
         ns.emplace(newId, &top.node->children.back());
     }
 }
@@ -466,7 +470,7 @@ void openPseudoArchive(const roarchive::RoArchive &archive
         TreeBuilder builder;
 
         // process tile dir
-        LOG(info2) << "Scanning tile dir " << dir.path << ".";
+        LOG(info1) << "Scanning tile dir " << dir.path << ".";
         for (const auto &file : dir) {
             if (!ba::starts_with(file.name, dir.name)) { continue; }
             if (!isMesh(file.name)) { continue; }
@@ -493,12 +497,57 @@ void openPseudoArchive(const roarchive::RoArchive &archive
 
 } // namespace
 
-LodTreeExport::LodTreeExport(const roarchive::RoArchive &archive
+LodTreeExport::LodTreeExport(roarchive::RoArchive &archive
                              , const math::Point3 &offset)
+    : archive_(archive.applyHint({ lodtree::mainXmlFileName
+                    , lodtree::alternativeXmlFileName }))
 {
-    if (!openArchive(archive, offset, *this)) {
-        openPseudoArchive(archive, offset, *this);
+    if (!openArchive(archive_, offset, *this)) {
+        openPseudoArchive(archive_, offset, *this);
     }
+}
+
+LodTreeExport::LodTreeExport(const boost::filesystem::path &root
+                             , const math::Point3 &offset
+                             , const std::string &mime)
+    : archive_
+      (root, roarchive::OpenOptions()
+       .setHint({ lodtree::mainXmlFileName
+                   , lodtree::alternativeXmlFileName })
+       .setMime(mime))
+{
+    if (!openArchive(archive_, offset, *this)) {
+        openPseudoArchive(archive_, offset, *this);
+    }
+}
+
+namespace {
+
+inline void addNodeTo(Node::list &nodes, const Node &node)
+{
+    nodes.push_back(node);
+    for (const auto &child : node.children) {
+        addNodeTo(nodes, child);
+    }
+}
+
+} // namespace
+
+Node::list LodTreeExport::nodes() const
+{
+    Node::list nodes;
+    for (const auto &root : blocks) { addNodeTo(nodes, root); }
+    return nodes;
+}
+
+math::Size2 LodTreeExport::textureSize(const boost::filesystem::path &txPath)
+    const
+{
+    // get file stream
+    auto is(archive_.istream(txPath));
+
+    // try to measure the image
+    return imgproc::imageSize(*is, is->path());
 }
 
 } // namespace lodtree
