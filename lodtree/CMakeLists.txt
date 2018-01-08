@@ -1,5 +1,5 @@
 # bump version here
-set(lodtree_VERSION 1.0)
+set(lodtree_VERSION 1.1)
 
 define_module(LIBRARY lodtree=${lodtree_VERSION}
   DEPENDS roarchive>=1.3 geo>=1.26 imgproc>=1.20
