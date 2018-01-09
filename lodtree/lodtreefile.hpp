@@ -73,10 +73,6 @@ public:
 
     const roarchive::RoArchive &archive() const { return archive_; }
 
-    /** Measures texture image size.
-     */
-    math::Size2 textureSize(const boost::filesystem::path &txPath) const;
-
 private:
     roarchive::RoArchive archive_;
 };

@@ -540,14 +540,4 @@ Node::list LodTreeExport::nodes() const
     return nodes;
 }
 
-math::Size2 LodTreeExport::textureSize(const boost::filesystem::path &txPath)
-    const
-{
-    // get file stream
-    auto is(archive_.istream(txPath));
-
-    // try to measure the image
-    return imgproc::imageSize(*is, is->path());
-}
-
 } // namespace lodtree
