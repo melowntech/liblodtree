@@ -16,7 +16,6 @@
 #include "geo/enu.hpp"
 
 #include "imgproc/readimage.hpp"
-#include "imgproc/cvcompat.hpp"
 
 #include "lodtreefile.hpp"
 
@@ -61,7 +60,7 @@ cv::Mat readTexture(const roarchive::RoArchive &archive, const fs::path &path
     //     texture = cv::imread(archive.path(path).string(), CV_LOAD_IMAGE_COLOR);
     // } else {
     const auto buf(archive.istream(path)->read());
-    texture = cv::imdecode(buf, IMGPROC_IMREAD(COLOR));
+    texture = cv::imdecode(buf, cv::IMREAD_COLOR);
     // }
 
     if (texture.data) { return texture; }
