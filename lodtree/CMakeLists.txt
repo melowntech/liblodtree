@@ -1,5 +1,5 @@
 # bump version here
-set(lodtree_VERSION 1.1)
+set(lodtree_VERSION 1.2)
 
 define_module(LIBRARY lodtree=${lodtree_VERSION}
   DEPENDS
